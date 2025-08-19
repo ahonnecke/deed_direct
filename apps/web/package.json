@@ -11,13 +11,16 @@
     "test": "node -e \"process.exit(0)\""
   },
   "dependencies": {
+    "@supa/shared": "workspace:*",
+    "@supa/supabase": "workspace:*",
+    "@supa/ui": "workspace:*",
     "next": "14.2.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native-web": "^0.19.12",
-    "tamagui": "^1.110.0",
-    "@supa/ui": "workspace:*",
-    "@supa/shared": "workspace:*",
-    "@supa/supabase": "workspace:*"
+    "tamagui": "^1.110.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.10"
   }
 }
