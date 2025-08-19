@@ -225,7 +225,43 @@ Keeping everything in free tiers is realistic early on.
 - Generators (`gen:feature`), GitHub Actions, Vercel deploy
 - EAS profiles + first OTA update
 
-**Phase 4 — Optional add-ons**
+**Phase 4 — Database enhancements (0.5 day)**
+- Add `updated_at` timestamps to all tables with triggers
+- Expand `profiles` table with `timezone`, `locale`, and `preferences` (JSONB)
+- Add indexes for frequently queried columns
+- Create database migration scripts
+
+**Phase 5 — Auth enhancements (0.5 day)**
+- Add password-based authentication alongside magic links
+- Implement refresh token rotation
+- Add rate limiting for auth endpoints
+- Create auth middleware for both platforms
+
+**Phase 6 — Mobile optimizations (1 day)**
+- Implement offline support strategy (local storage + sync)
+- Add deep linking configuration
+- Configure biometric authentication
+- Add push notification handling
+
+**Phase 7 — Performance optimizations (0.5–1 day)**
+- Add Suspense boundaries and loading states
+- Implement image optimization for Supabase Storage
+- Configure service worker for web PWA capabilities
+- Add React Query prefetching strategies
+
+**Phase 8 — Testing expansion (1 day)**
+- Set up E2E testing with Playwright for web
+- Add component testing for shared UI
+- Implement API mocking strategy
+- Create test data generators
+
+**Phase 9 — Documentation & DX (0.5 day)**
+- Add API documentation generation
+- Create component storybook/documentation
+- Add contribution guidelines
+- Improve error handling and debugging tools
+
+**Phase 10 — Optional add-ons**
 - File uploads to Supabase Storage
 - Push notifications (Expo) with serverless function to schedule/trigger
 - Payments via Stripe (webhooks in Next API routes; client-side in mobile via Stripe RN SDK)
@@ -271,6 +307,7 @@ pnpm --filter mobile start
 
 ## 13) Definition of Done (Template v1)
 
+### Core Template (Phases 0-3)
 - ✅ Monorepo builds & runs both apps
 - ✅ Shared UI via Tamagui with theming + icons
 - ✅ Supabase auth + session guard on both apps
@@ -279,16 +316,34 @@ pnpm --filter mobile start
 - ✅ CI (lint, typecheck, tests) + basic deploys (Vercel, EAS profiles)
 - ✅ Docs: `README.md` with setup, envs, scripts, and FAQ
 
+### Enhanced Template (Phases 4-9, Optional)
+- ⬜ Enhanced database schema with timestamps, indexes, and JSONB
+- ⬜ Advanced auth with password, refresh tokens, and rate limiting
+- ⬜ Mobile optimizations (offline support, deep linking, biometrics)
+- ⬜ Performance optimizations (Suspense, image optimization, PWA)
+- ⬜ Expanded testing (E2E, component, API mocking)
+- ⬜ Comprehensive documentation (API docs, storybook, contribution guide)
+
 ---
 
 ## 14) Next Steps for You
 
+### Getting Started (Phases 0-3)
 1. Create a new Supabase project (dev) and paste the baseline SQL (profiles/orgs/memberships + policies).
 2. Run the commands in **Section 12** to scaffold the repo.
 3. Wire envs and confirm login (email magic link).
 4. Ship the `Profile` feature; validate RLS with a second account.
 5. Decide whether to enable Sentry/PostHog now or later.
 6. Use `gen:feature` to start your first startup idea module.
+
+### Enhancement Path (Phases 4-9)
+7. Evaluate which enhancements are most valuable for your specific use case.
+8. Implement database enhancements from Phase 4 when you need better data tracking.
+9. Add auth enhancements from Phase 5 when security becomes more critical.
+10. Implement mobile optimizations from Phase 6 when you're ready to improve the native experience.
+11. Add performance optimizations from Phase 7 when you need to scale.
+12. Expand testing from Phase 8 when stability becomes more important.
+13. Improve documentation from Phase 9 when onboarding more developers.
 
 ---
 
@@ -373,6 +428,48 @@ create policy "Membership deletable by owner"
       where o.id = org_id and o.owner = auth.uid()
     )
   );
+```
+
+### Appendix B — Enhanced SQL (Phase 4 additions)
+
+```sql
+-- Add updated_at columns and triggers
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+ALTER TABLE public.orgs ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+ALTER TABLE public.memberships ADD COLUMN IF NOT EXISTS updated_at timestamptz;
+
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Add triggers to all tables
+CREATE TRIGGER set_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_orgs_updated_at
+  BEFORE UPDATE ON public.orgs
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+CREATE TRIGGER set_memberships_updated_at
+  BEFORE UPDATE ON public.memberships
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- Enhance profiles table
+ALTER TABLE public.profiles 
+  ADD COLUMN IF NOT EXISTS timezone text DEFAULT 'UTC',
+  ADD COLUMN IF NOT EXISTS locale text DEFAULT 'en-US',
+  ADD COLUMN IF NOT EXISTS preferences jsonb DEFAULT '{}'::jsonb;
+
+-- Add useful indexes
+CREATE INDEX IF NOT EXISTS idx_profiles_onboarded ON public.profiles (onboarded);
+CREATE INDEX IF NOT EXISTS idx_orgs_owner ON public.orgs (owner);
+CREATE INDEX IF NOT EXISTS idx_memberships_user_id ON public.memberships (user_id);
 ```
 
 ---
