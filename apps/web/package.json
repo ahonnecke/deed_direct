@@ -21,6 +21,7 @@
     "tamagui": "^1.110.0"
   },
   "devDependencies": {
+    "@tamagui/next-plugin": "^1.132.20",
     "@types/react": "19.1.10"
   }
 }
