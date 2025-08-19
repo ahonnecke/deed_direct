@@ -1,65 +1,76 @@
 "use client";
-import { createPublicClient } from "@supa/supabase/src/client.browser";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { z } from "zod";
+export const dynamic = "force-dynamic";
 
-const ProfileSchema = z.object({ full_name: z.string().min(1, "Required") });
+import { createPublicClient } from "@supa/supabase/src/client.browser";
+import { useEffect, useState } from "react";
+
+type Profile = { id: string; full_name: string | null };
 
 export default function ProfilePage() {
-	const supabase = createPublicClient();
-	const qc = useQueryClient();
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [profile, setProfile] = useState<Profile | null>(null);
+	const [name, setName] = useState("");
 
-	const { data, isLoading } = useQuery({
-		queryKey: ["profile"],
-		queryFn: async () => {
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
-			if (!user) throw new Error("Not signed in");
-			const { data: rows, error } = await supabase
-				.from("profiles")
-				.select("*")
-				.eq("id", user.id)
-				.maybeSingle();
-			if (error) throw error;
-			return rows ?? { id: user.id, full_name: "" };
-		},
-	});
+	useEffect(() => {
+		const supabase = createPublicClient();
+		(async () => {
+			try {
+				const {
+					data: { user },
+				} = await supabase.auth.getUser();
+				if (!user) {
+					setError("Not signed in");
+					setLoading(false);
+					return;
+				}
+				const { data, error } = await supabase
+					.from("profiles")
+					.select("*")
+					.eq("id", user.id)
+					.maybeSingle();
+				if (error) throw error;
+				const p = data ?? ({ id: user.id, full_name: "" } as Profile);
+				setProfile(p);
+				setName(p.full_name ?? "");
+			} catch (e: any) {
+				setError(e.message ?? "Failed to load");
+			} finally {
+				setLoading(false);
+			}
+		})();
+	}, []);
 
-	const mutation = useMutation({
-		mutationFn: async (values: { full_name: string }) => {
-			const parsed = ProfileSchema.parse(values);
-			const {
-				data: { user },
-			} = await supabase.auth.getUser();
-			if (!user) throw new Error("Not signed in");
-			const { error } = await supabase
-				.from("profiles")
-				.upsert(
-					{ id: user.id, full_name: parsed.full_name },
-					{ onConflict: "id" },
-				);
-			if (error) throw error;
-		},
-		onSuccess: () => qc.invalidateQueries({ queryKey: ["profile"] }),
-	});
+	async function onSave(e: React.FormEvent) {
+		e.preventDefault();
+		setError(null);
+		const supabase = createPublicClient();
+		const {
+			data: { user },
+		} = await supabase.auth.getUser();
+		if (!user) {
+			setError("Not signed in");
+			return;
+		}
+		const { error } = await supabase
+			.from("profiles")
+			.upsert({ id: user.id, full_name: name }, { onConflict: "id" });
+		if (error) setError(error.message);
+	}
 
-	if (isLoading) return <p style={{ padding: 24 }}>Loading…</p>;
-	const name = data?.full_name ?? "";
+	if (loading) return <main style={{ padding: 24 }}>Loading…</main>;
+	if (error)
+		return (
+			<main style={{ padding: 24, color: "crimson" }}>Error: {error}</main>
+		);
 
 	return (
 		<main style={{ padding: 24, maxWidth: 640, margin: "0 auto" }}>
 			<h1>Profile</h1>
-			<form
-				onSubmit={(e) => {
-					e.preventDefault();
-					const form = new FormData(e.currentTarget as HTMLFormElement);
-					mutation.mutate({ full_name: String(form.get("full_name") || "") });
-				}}
-			>
+			<form onSubmit={onSave}>
 				<input
-					name="full_name"
-					defaultValue={name}
+					value={name}
+					onChange={(e) => setName(e.target.value)}
 					placeholder="Full name"
 					style={{
 						width: "100%",
@@ -69,9 +80,7 @@ export default function ProfilePage() {
 						borderRadius: 8,
 					}}
 				/>
-				<button type="submit" disabled={mutation.isPending}>
-					{mutation.isPending ? "Saving…" : "Save"}
-				</button>
+				<button type="submit">Save</button>
 			</form>
 		</main>
 	);
