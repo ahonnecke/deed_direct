@@ -1,0 +1,35 @@
+# .accelerator/feature-spec.schema.yaml
+type: object
+required: [name, routes, tables]
+properties:
+  name: { type: string }
+  description: { type: string }
+  routes:
+    type: array
+    items:
+      type: object
+      required: [platforms, path, auth, screens]
+      properties:
+        platforms: { type: array, items: { enum: [web, mobile] } }
+        path: { type: string }
+        auth: { type: string, enum: [public, protected] }
+        screens: { type: array, items: { type: string } }
+  tables:
+    type: array
+    items:
+      type: object
+      required: [name, columns, rls]
+      properties:
+        name: { type: string }
+        columns:
+          type: array
+          items:
+            type: object
+            required: [name, type]
+            properties:
+              name: { type: string }
+              type: { type: string }
+              default: { type: string }
+              nullable: { type: boolean }
+              pk: { type: boolean }
+        rls: { type: string }

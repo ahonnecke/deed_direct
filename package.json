@@ -1,0 +1,26 @@
+{
+  "name": "supa-accelerator",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "supabase/functions/*",
+    ".accelerator"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel --filter=web --filter=mobile",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "gen:feature": "tsx tools/scripts/create-feature.ts",
+    "gen:types": "supabase gen types typescript --schema public > packages/shared/src/db.types.ts"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.9",
+    "typescript": "^5.4.0",
+    "tsx": "^4.11.0",
+    "@types/node": "^20.10.0"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "allowedDependencies": [
+    "@supabase/supabase-js",
+    "@tanstack/react-query",
+    "zod"
+  ]
+}
