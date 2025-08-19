@@ -69,6 +69,15 @@ importers:
       '@supa/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@supabase/ssr':
+        specifier: ^0.5.0
+        version: 0.5.2(@supabase/supabase-js@2.55.0)
+      '@supabase/supabase-js':
+        specifier: ^2.45.0
+        version: 2.55.0
+      '@tanstack/react-query':
+        specifier: ^5.51.0
+        version: 5.85.5(react@18.2.0)
       next:
         specifier: 14.2.5
         version: 14.2.5(@babel/core@7.28.3)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -84,6 +93,9 @@ importers:
       tamagui:
         specifier: ^1.110.0
         version: 1.132.20(react-dom@18.2.0(react@18.2.0))(react-native@0.74.1(@babel/core@7.28.3)(@babel/preset-env@7.28.3(@babel/core@7.28.3))(@types/react@19.1.10)(react@18.2.0))(react@18.2.0)
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
     devDependencies:
       '@tamagui/next-plugin':
         specifier: ^1.132.20
