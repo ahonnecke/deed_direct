@@ -22,16 +22,43 @@ RUN pnpm install --frozen-lockfile
 
 # ---------- Builder ----------
 FROM deps AS builder
+
+# Required build-time arguments with no defaults
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Validate required build args
+RUN test -n "$NEXT_PUBLIC_SUPABASE_URL" || (echo "Error: NEXT_PUBLIC_SUPABASE_URL is required" && exit 1)
+RUN test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" || (echo "Error: NEXT_PUBLIC_SUPABASE_ANON_KEY is required" && exit 1)
+
+# Set as environment variables for the build process
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 # Bring source after deps to maximize cache
 COPY . .
+
 # Build only the web app (Next.js)
 RUN pnpm --filter web build
 
 # ---------- Runner (small, prod-only) ----------
 FROM node:20-alpine AS runner
+
+# Required runtime environment variables (must be passed at runtime)
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+# Validate required runtime args
+RUN test -n "$NEXT_PUBLIC_SUPABASE_URL" || (echo "Error: NEXT_PUBLIC_SUPABASE_URL is required" && exit 1)
+RUN test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" || (echo "Error: NEXT_PUBLIC_SUPABASE_ANON_KEY is required" && exit 1)
+
+# Set environment variables for runtime
 ENV NODE_ENV=production \
     PORT=3000 \
-    NEXT_TELEMETRY_DISABLED=1
+    NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 WORKDIR /app
 
 # Copy Next standalone output and statics

@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     image: supa-accelerator/web:latest
     ports:
       - "3000:3000"
@@ -10,10 +13,18 @@ services:
     env_file:
       - .env
     environment:
-      # You can also set these here or entirely via .env
+      NODE_ENV: production
+      DEBUG: "next:*"       # <- enable all Next.js debug logs
+      # Or be more specific:
+      # DEBUG: "next:server*,next:router*"
+
+      # Environment variables from .env file
       NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      # Server-side variables
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      # Other variables
       ENABLE_TELEMETRY: ${ENABLE_TELEMETRY:-false}
     restart: unless-stopped

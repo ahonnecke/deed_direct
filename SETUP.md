@@ -40,27 +40,33 @@ Reveal and copy the service role to env vars
 
 ## Create profiles tables
 
-Run this in Supabase SQL Editor:
+ - Navigate to project overview
+ - Run this in Supabase SQL Editor (note, this exact SQL has been run successfully)
 
+```
 create extension if not exists pgcrypto;
 
-create table if not exists public.profiles (
+create table if not exists public.user_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  full_name text,
+  first_name text,
+  last_name text,
+  username text not null,
+  email text,
   avatar_url text,
   onboarded boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
-alter table public.profiles enable row level security;
+alter table public.user_profiles enable row level security;
 
-create policy "Profiles viewable by owner"
-  on public.profiles for select using (auth.uid() = id);
+create policy "User_Profiles viewable by owner"
+  on public.user_profiles for select using (auth.uid() = id);
 
-create policy "Profiles updatable by owner"
-  on public.profiles for update using (auth.uid() = id);
+create policy "User_Profiles updatable by owner"
+  on public.user_profiles for update using (auth.uid() = id);
 
 -- ensure a profile row exists after signup (Edge Function optional later)
-
+```
 ## Create profile page /app/profile (read + update)
 
 Outcome: one end-to-end feature showing your patterns (Query + Zod + optimistic UI).
