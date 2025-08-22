@@ -60,11 +60,10 @@ make sync-config
 make run-migrations
 ```
 
-This will apply all migrations in the `supabase/migrations` directory, including:
-- Base tables (`profiles`, `orgs`, `memberships`)
-- RLS policies for each table
-- User profiles table with updated schema
-- Triggers for automatic profile creation and timestamps
+This will apply all migrations in the `supabase/migrations` directory, organized in a clean sequence:
+- **0001_base.sql**: Core tables (`user_profiles`, `orgs`, `memberships`) and triggers
+- **0002_security.sql**: RLS policies and automatic profile creation
+- **0003_storage.sql**: Storage buckets for avatars and organization files
 
 ---
 
@@ -131,7 +130,7 @@ When you want web-side extraction/optimizations:
 
 ## Next steps (recommended order)
 1. Add a simple **/sign-in** page (magic link) and redirect to **/app** on success.
-2. Implement `/app/profile` against the `profiles` table (Zod form + TanStack Query).
+2. Implement `/app/profile` against the `user_profiles` table (Zod form + TanStack Query).
 3. Add CI (GitHub Actions): typecheck, test, **Docker build** for the web image.
 4. (Optional) Push image to a registry and deploy your container.
 5. Circle back to mobile: wire Supabase auth and a matching profile screen.

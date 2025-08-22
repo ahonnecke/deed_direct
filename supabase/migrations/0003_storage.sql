@@ -1,4 +1,6 @@
 -- 0003_storage.sql
+-- Create storage buckets and policies
+
 -- Create storage buckets
 insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
@@ -7,12 +9,12 @@ insert into storage.buckets (id, name, public) values ('org-files', 'org-files',
 on conflict (id) do nothing;
 
 -- Policies for avatars (public read, user-owned write)
-create policy if not exists "avatars_read_all"
+create policy "avatars_read_all"
 on storage.objects for select
 to authenticated, anon
 using (bucket_id = 'avatars');
 
-create policy if not exists "avatars_write_own"
+create policy "avatars_write_own"
 on storage.objects for insert
 to authenticated
 with check (
@@ -21,7 +23,7 @@ with check (
 );
 
 -- Policies for org-files (members only)
-create policy if not exists "org_files_read_member"
+create policy "org_files_read_member"
 on storage.objects for select
 to authenticated
 using (
@@ -33,7 +35,7 @@ using (
   )
 );
 
-create policy if not exists "org_files_write_member"
+create policy "org_files_write_member"
 on storage.objects for insert
 to authenticated
 with check (

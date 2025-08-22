@@ -7,7 +7,17 @@ import { useAuth } from "@supa/supabase/src/auth-context";
 import { ProtectedRoute } from "@supa/supabase/src/auth-middleware";
 // Use window.location for navigation instead of Next.js router to avoid type issues
 
-type Profile = { id: string; full_name: string | null };
+type Profile = { 
+	id: string; 
+	first_name: string | null; 
+	last_name: string | null; 
+	username: string | null; 
+	avatar_url: string | null; 
+	onboarded: boolean;
+	timezone: string;
+	locale: string;
+	preferences: Record<string, any>;
+};
 
 function ProfileContent() {
 	const { user, signOut } = useAuth();
@@ -24,14 +34,24 @@ function ProfileContent() {
 		(async () => {
 			try {
 				const { data, error } = await supabase
-					.from("profiles")
+					.from("user_profiles")
 					.select("*")
 					.eq("id", user.id)
 					.maybeSingle();
 				if (error) throw error;
-				const p = data ?? ({ id: user.id, full_name: "" } as Profile);
+				const p = data ?? ({
+					id: user.id,
+					first_name: "",
+					last_name: "",
+					username: null,
+					avatar_url: null,
+					onboarded: false,
+					timezone: "UTC",
+					locale: "en-US",
+					preferences: {}
+				} as Profile);
 				setProfile(p);
-				setName(p.full_name ?? "");
+				setName(p.first_name ?? "");
 			} catch (e: any) {
 				setError(e.message ?? "Failed to load");
 			} finally {
@@ -52,8 +72,8 @@ function ProfileContent() {
 		const supabase = createPublicClient();
 		try {
 			const { error } = await supabase
-				.from("profiles")
-				.upsert({ id: user.id, full_name: name }, { onConflict: "id" });
+				.from("user_profiles")
+				.upsert({ id: user.id, first_name: name }, { onConflict: "id" });
 			if (error) throw error;
 		} catch (err: any) {
 			setError(err.message || "Failed to save profile");
@@ -117,12 +137,12 @@ function ProfileContent() {
 			</div>
 			
 			<form onSubmit={onSave}>
-				<label htmlFor="fullName">Full Name</label>
+				<label htmlFor="firstName">First Name</label>
 				<input
-					id="fullName"
+					id="firstName"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
-					placeholder="Full name"
+					placeholder="First name"
 					style={styles.input}
 				/>
 				

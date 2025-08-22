@@ -1,4 +1,4 @@
-.PHONY: login link run-migrations reset-db local-start local-stop sync-config list-migrations fix-migrations
+.PHONY: setup login link run-migrations reset-db local-start local-stop sync-config list-migrations fix-migrations
 
 # Default Supabase CLI command
 SUPABASE_CMD := npx supabase
@@ -48,9 +48,15 @@ fix-migrations:
 	@echo "Fixing migration history..."
 	./tools/scripts/fix-migrations.sh
 
+# Complete setup (create project, link, configure, and run migrations)
+setup:
+	@echo "Running complete Supabase setup..."
+	./tools/scripts/setup.sh
+
 # Help command
 help:
 	@echo "Supabase Commands:"
+	@echo "  make setup          - Complete setup (create project, link, configure, and run migrations)"
 	@echo "  make login          - Login to Supabase"
 	@echo "  make link           - Link to Supabase project"
 	@echo "  make sync-config    - Sync config from remote project (db pull)"
