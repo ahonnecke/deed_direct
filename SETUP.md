@@ -40,33 +40,44 @@ Reveal and copy the service role to env vars
 
 ## Create profiles tables
 
- - Navigate to project overview
- - Run this in Supabase SQL Editor (note, this exact SQL has been run successfully)
+Follow these steps to set up your database schema:
 
+```bash
+# Login to Supabase (first time only)
+make login
+
+# Link to your Supabase project (first time only)
+make link
+
+# Sync config from remote project (if needed)
+make sync-config
+
+# Check migration status
+make list-migrations
+
+# If you encounter migration history errors, fix them first
+make fix-migrations
+
+# Apply migrations to your Supabase project
+make run-migrations
 ```
-create extension if not exists pgcrypto;
 
-create table if not exists public.user_profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  first_name text,
-  last_name text,
-  username text not null,
-  email text,
-  avatar_url text,
-  onboarded boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-alter table public.user_profiles enable row level security;
+This will apply all migrations in the `supabase/migrations` directory.
 
-create policy "User_Profiles viewable by owner"
-  on public.user_profiles for select using (auth.uid() = id);
+### Troubleshooting Migrations
 
-create policy "User_Profiles updatable by owner"
-  on public.user_profiles for update using (auth.uid() = id);
+If you encounter errors about migration history not matching, use these commands:
 
--- ensure a profile row exists after signup (Edge Function optional later)
+```bash
+# List all migrations and their status
+make list-migrations
+
+# Automatically fix migration history issues
+make fix-migrations
 ```
+
+The `fix-migrations` command runs a script that intelligently detects which migrations need to be marked as applied and fixes them automatically.
+ 
 ## Create profile page /app/profile (read + update)
 
 Outcome: one end-to-end feature showing your patterns (Query + Zod + optimistic UI).

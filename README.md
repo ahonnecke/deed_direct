@@ -42,13 +42,29 @@ Required values:
 
 ---
 
-## 2) Apply baseline SQL in Supabase
-Open the **SQL Editor** in your Supabase project and run the baseline schema:
-- `profiles`, `orgs`, `memberships` tables
-- RLS policies for each
-- (Optionally) the `enhancements` SQL with `updated_at` triggers and indexes
+## 2) Apply migrations to Supabase
 
-If you’re using this template’s `supabase/migrations`, paste and run the SQL files in order.
+This project uses Supabase migrations to manage the database schema. Use the following commands to apply migrations:
+
+```bash
+# Login to Supabase (first time only)
+make login
+
+# Link to your Supabase project (first time only)
+make link
+
+# Sync config from remote project (if needed)
+make sync-config
+
+# Apply migrations to your Supabase project
+make run-migrations
+```
+
+This will apply all migrations in the `supabase/migrations` directory, including:
+- Base tables (`profiles`, `orgs`, `memberships`)
+- RLS policies for each table
+- User profiles table with updated schema
+- Triggers for automatic profile creation and timestamps
 
 ---
 
