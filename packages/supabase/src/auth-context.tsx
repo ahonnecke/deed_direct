@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { createPublicClient } from "./client.browser";
+import { createPublicClient } from "./client";
 
 type AuthContextType = {
   user: User | null;

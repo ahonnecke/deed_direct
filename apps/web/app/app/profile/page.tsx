@@ -1,7 +1,7 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { createPublicClient } from "@supa/supabase/src/client.browser";
+import { createPublicClient } from "@supa/supabase/src/client";
 import { useEffect, useState } from "react";
 import { useAuth } from "@supa/supabase/src/auth-context";
 import { ProtectedRoute } from "@supa/supabase/src/auth-middleware";
@@ -33,27 +33,45 @@ function ProfileContent() {
 		const supabase = createPublicClient();
 		(async () => {
 			try {
+				// Try to get the profile
 				const { data, error } = await supabase
 					.from("user_profiles")
 					.select("*")
 					.eq("id", user.id)
 					.maybeSingle();
+				
 				if (error) throw error;
-				const p = data ?? ({
-					id: user.id,
-					first_name: "",
-					last_name: "",
-					username: null,
-					avatar_url: null,
-					onboarded: false,
-					timezone: "UTC",
-					locale: "en-US",
-					preferences: {}
-				} as Profile);
-				setProfile(p);
-				setName(p.first_name ?? "");
+				
+				// If profile doesn't exist, create it
+				if (!data) {
+					const newProfile = {
+						id: user.id,
+						first_name: "",
+						last_name: "",
+						username: null,
+						avatar_url: null,
+						onboarded: false,
+						timezone: "UTC",
+						locale: "en-US",
+						preferences: {}
+					} as Profile;
+					
+					// Insert the new profile
+					const { error: insertError } = await supabase
+						.from("user_profiles")
+						.insert(newProfile);
+						
+					if (insertError) throw insertError;
+					
+					setProfile(newProfile);
+					setName("");
+				} else {
+					// Use existing profile
+					setProfile(data);
+					setName(data.first_name ?? "");
+				}
 			} catch (e: any) {
-				setError(e.message ?? "Failed to load");
+				setError(e.message ?? "Failed to load or create profile");
 			} finally {
 				setLoading(false);
 			}

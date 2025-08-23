@@ -11,6 +11,9 @@ create policy "User profiles viewable by owner"
 create policy "User profiles updatable by owner"
   on public.user_profiles for update using (auth.uid() = id);
 
+create policy "User profiles insertable by owner"
+  on public.user_profiles for insert with check (auth.uid() = id);
+
 -- Enable RLS on orgs
 alter table public.orgs enable row level security;
 
@@ -35,29 +38,4 @@ create policy "memberships_delete_owner" on public.memberships for delete using 
   exists (select 1 from public.orgs o where o.id = org_id and o.owner = auth.uid())
 );
 
--- Auto-create a profile row on signup
-create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer as $$
-begin
-  insert into public.user_profiles (
-    id,
-    onboarded,
-    timezone,
-    locale,
-    preferences
-  ) values (
-    new.id,
-    false,
-    'UTC',
-    'en-US',
-    '{}'::jsonb
-  ) on conflict do nothing;
-  
-  return new;
-end$$;
-
--- Create the trigger on auth.users
-drop trigger if exists handle_new_user on auth.users;
-create trigger handle_new_user
-after insert on auth.users
-for each row execute function public.handle_new_user();
+-- No automatic profile creation - profiles will be created by the frontend
