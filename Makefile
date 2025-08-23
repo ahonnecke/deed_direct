@@ -1,4 +1,4 @@
-.PHONY: setup login link run-migrations reset-db local-start local-stop sync-config list-migrations fix-migrations
+.PHONY: setup create-project link run-migrations link-and-migrate reset-db local-start local-stop sync-config list-migrations
 
 # Default Supabase CLI command
 SUPABASE_CMD := npx supabase
@@ -8,20 +8,10 @@ login:
 	@echo "Running Supabase login..."
 	$(SUPABASE_CMD) login
 
-# Link to Supabase project
-link:
-	@echo "Running Supabase link..."
-	$(SUPABASE_CMD) link
-
 # Sync config from remote project
 sync-config:
 	@echo "Syncing config from remote project..."
 	$(SUPABASE_CMD) db pull
-
-# Run migrations
-run-migrations:
-	@echo "Running Supabase migrations..."
-	$(SUPABASE_CMD) db push
 
 # Reset database and run all migrations
 reset-db:
@@ -43,26 +33,47 @@ list-migrations:
 	@echo "Listing migrations..."
 	$(SUPABASE_CMD) migration list
 
-# Fix migrations using the script
-fix-migrations:
-	@echo "Fixing migration history..."
-	./tools/scripts/fix-migrations.sh
+# Check migration status
+migration-status:
+	@echo "Checking migration status..."
+	$(SUPABASE_CMD) migration status
+
+# Create a new Supabase project
+create-project:
+	@echo "Creating new Supabase project..."
+	python3 ./tools/scripts/create-project.py
+
+# Link to existing project
+link:
+	@echo "Linking to Supabase project..."
+	python3 ./tools/scripts/link.py
+
+# Apply migrations to linked project
+run-migrations:
+	@echo "Applying migrations to Supabase project..."
+	python3 ./tools/scripts/migrate.py
+
+# Link and run migrations in one step
+link-and-migrate:
+	@echo "Linking to project and applying migrations..."
+	python3 ./tools/scripts/link-and-migrate.py
 
 # Complete setup (create project, link, configure, and run migrations)
-setup:
-	@echo "Running complete Supabase setup..."
-	./tools/scripts/setup.sh
+setup: create-project link-and-migrate
+	@echo "Supabase setup complete!"
 
 # Help command
 help:
 	@echo "Supabase Commands:"
 	@echo "  make setup          - Complete setup (create project, link, configure, and run migrations)"
+	@echo "  make create-project - Create a new Supabase project"
+	@echo "  make link           - Link to existing Supabase project"
+	@echo "  make run-migrations - Apply migrations to linked project"
+	@echo "  make link-and-migrate - Link to project and run migrations in one step"
 	@echo "  make login          - Login to Supabase"
-	@echo "  make link           - Link to Supabase project"
 	@echo "  make sync-config    - Sync config from remote project (db pull)"
 	@echo "  make list-migrations - List all migrations and their status"
-	@echo "  make fix-migrations - Fix migration history automatically"
-	@echo "  make run-migrations - Run pending migrations"
+	@echo "  make migration-status - Check migration status"
 	@echo "  make reset-db       - Reset database and run all migrations"
 	@echo "  make local-start    - Start local Supabase"
 	@echo "  make local-stop     - Stop local Supabase"

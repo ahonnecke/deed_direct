@@ -25,7 +25,21 @@ This repo is tuned for quick clones and Dockerized web deploys.
 
 ---
 
-## 1) Set up environment
+## 2) Set up Supabase
+
+This project provides a streamlined Supabase setup process that uses direct Supabase CLI commands with fail-fast behavior.
+
+### Option A: Create a new Supabase project
+
+```bash
+# Create a new Supabase project (generates secure password, creates project, updates .env)
+make create-project
+
+# Link to the newly created project and apply migrations in one step
+make link-and-migrate
+```
+### A.2 Set up environment
+These values don't exist until after project creation.
 Copy the example env file to `.env` (used by Docker Compose and local runs) and fill in keys from your Supabase project.
 
 ```bash
@@ -42,25 +56,32 @@ Required values:
 
 ---
 
-## 2) Apply migrations to Supabase
 
-This project uses Supabase migrations to manage the database schema. Use the following commands to apply migrations:
+### Option B: Link to an existing Supabase project
 
 ```bash
 # Login to Supabase (first time only)
 make login
 
-# Link to your Supabase project (first time only)
-make link
+# Link to your existing Supabase project and apply migrations in one step
+make link-and-migrate
+
+# Or if you prefer separate steps:
+# make link
+# make run-migrations
 
 # Sync config from remote project (if needed)
 make sync-config
-
-# Apply migrations to your Supabase project
-make run-migrations
 ```
 
-This will apply all migrations in the `supabase/migrations` directory, organized in a clean sequence:
+### Option C: Complete setup in one command
+
+```bash
+# Run the complete setup process (create project, link, and run migrations)
+make setup
+```
+
+The migrations are organized in a clean sequence:
 - **0001_base.sql**: Core tables (`user_profiles`, `orgs`, `memberships`) and triggers
 - **0002_security.sql**: RLS policies and automatic profile creation
 - **0003_storage.sql**: Storage buckets for avatars and organization files
@@ -141,6 +162,7 @@ When you want web-side extraction/optimizations:
 - **Docker build fails copying `public/`** → ensure `apps/web/public/` exists (empty `.gitignore` is fine).
 - **Edge runtime warnings** with Supabase in middleware → split clients into `client.browser.ts` and `client.ssr.ts` and import the correct one per runtime.
 - **pnpm workspace not recognized** → ensure `pnpm-workspace.yaml` includes `apps/*` and `packages/*`.
+- **Supabase setup hangs** → the scripts use fail-fast behavior, so check your Supabase login status with `npx supabase projects list` and ensure your network connection is stable.
 
 ---
 

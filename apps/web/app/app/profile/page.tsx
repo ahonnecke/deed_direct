@@ -42,7 +42,8 @@ function ProfileContent() {
 				
 				if (error) throw error;
 				
-				// If profile doesn't exist, create it
+				// If profile doesn't exist, create a temporary local profile
+				// We'll save it to the database when the user clicks Save
 				if (!data) {
 					const newProfile = {
 						id: user.id,
@@ -55,13 +56,6 @@ function ProfileContent() {
 						locale: "en-US",
 						preferences: {}
 					} as Profile;
-					
-					// Insert the new profile
-					const { error: insertError } = await supabase
-						.from("user_profiles")
-						.insert(newProfile);
-						
-					if (insertError) throw insertError;
 					
 					setProfile(newProfile);
 					setName("");

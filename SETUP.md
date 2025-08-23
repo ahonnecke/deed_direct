@@ -8,6 +8,9 @@ This project includes an automated setup script that handles the entire Supabase
 make setup
 ```
 
+## Disable Legacy API keys
+## Create API keys
+
 This command will:
 
 1. Create a new Supabase project (or use an existing one with the same name)
@@ -22,13 +25,6 @@ You can optionally specify a project name as an argument to the setup script:
 ./tools/scripts/setup.sh my-project-name
 ```
 
-Note: this fails on the password step (at the least when the project exists,
-maybe when new as well).
-
-What did work was:
-- `make setup` > fail
-- manually reset the db pw
-- `make setup` > enter the new db pw
 
 ## Manual Setup
 

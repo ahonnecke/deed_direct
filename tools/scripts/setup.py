@@ -350,29 +350,60 @@ def get_api_keys(project_id: str) -> Tuple[Optional[str], Optional[str]]:
 def link_project(project_id: str, db_password: str) -> bool:
     """Link to the Supabase project."""
     log("Linking to Supabase project...")
-
-    # Link with the password we created - retry up to 5 times
+    
+    # First, verify the database password from the file if it exists
+    if os.path.exists("template_postgres_pw"):
+        with open("template_postgres_pw", "r") as f:
+            file_password = f.read().strip()
+            if file_password and file_password != db_password:
+                log("Found different password in template_postgres_pw file, using that instead")
+                db_password = file_password
+    
+    # Make sure we have a valid password
+    if not db_password:
+        error("Database password is empty. Cannot link project.")
+    
+    # Link with the password - retry up to 5 times
     log("Linking project with database password...")
     for attempt in range(1, 6):
         log(f"Attempt {attempt}/5: Linking to project...")
-        result = run_command(
-            [
-                "npx",
-                "supabase",
-                "link",
-                "--project-ref",
-                project_id,
-                "--password",
-                db_password,
-            ],
-            check=False,
-        )
+        
+        # On first attempt, show full command output for debugging
+        if attempt == 1:
+            log("Running link command with verbose output:")
+            result = run_command(
+                [
+                    "npx",
+                    "supabase",
+                    "link",
+                    "--project-ref",
+                    project_id,
+                    "--password",
+                    db_password,
+                ],
+                check=False,
+                capture_output=False,
+            )
+        else:
+            result = run_command(
+                [
+                    "npx",
+                    "supabase",
+                    "link",
+                    "--project-ref",
+                    project_id,
+                    "--password",
+                    db_password,
+                ],
+                check=False,
+            )
 
         if result.returncode == 0:
             log("Successfully linked to project!")
             return True
 
-        log(f"Link attempt output: {result.stdout}")
+        if attempt > 1:
+            log(f"Link attempt output: {result.stdout}")
 
         if attempt == 5:
             error(
@@ -475,16 +506,62 @@ def sync_remote_changes() -> bool:
 def apply_migrations() -> bool:
     """Apply migrations to Supabase project."""
     log("Applying migrations to Supabase project...")
+    
+    # First check if we need to verify the database password
+    db_password = None
+    if os.path.exists("template_postgres_pw"):
+        with open("template_postgres_pw", "r") as f:
+            db_password = f.read().strip()
+            log("Retrieved database password from template_postgres_pw file")
+    
     for attempt in range(1, 4):
         log(f"Attempt {attempt}/3: Pushing migrations...")
-        result = run_command(["npx", "supabase", "db", "push"], check=False)
+        
+        # On first attempt, show full command output for debugging
+        if attempt == 1:
+            log("Running migration with verbose output:")
+            result = run_command(["npx", "supabase", "db", "push"], 
+                               check=False, capture_output=False)
+        else:
+            result = run_command(["npx", "supabase", "db", "push"], check=False)
 
         if result.returncode == 0:
             log("Successfully pushed migrations")
             return True
+            
+        # If migration failed and we have a password, try to relink and then retry
+        if db_password and attempt == 1:
+            log("Migration failed. Attempting to relink with password from template_postgres_pw")
+            # Get project ID from config
+            config_result = run_command(["npx", "supabase", "status"], check=False)
+            project_id = None
+            
+            if config_result.returncode == 0:
+                # Try to extract project ID from status output
+                match = re.search(r'Project ID:\s+([\w-]+)', config_result.stdout)
+                if match:
+                    project_id = match.group(1)
+                    log(f"Found project ID from status: {project_id}")
+                    
+                    # Relink with the password
+                    log("Relinking project with database password...")
+                    run_command(
+                        [
+                            "npx",
+                            "supabase",
+                            "link",
+                            "--project-ref",
+                            project_id,
+                            "--password",
+                            db_password,
+                        ],
+                        check=False,
+                    )
+                    # Continue to next attempt without counting this one
+                    continue
 
         if attempt == 3:
-            error("Failed to push migrations after 3 attempts")
+            error("Failed to push migrations after 3 attempts. Check database password and permissions.")
         else:
             log("Migration push attempt failed. Waiting before retry...")
             time.sleep(5)

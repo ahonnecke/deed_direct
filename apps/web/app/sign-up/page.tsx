@@ -47,16 +47,6 @@ export default function SignUp() {
 
       // Check if user was created
       if (data?.user) {
-        // Create a user profile
-        const { error: profileError } = await supabase
-          .from("user_profiles")
-          .upsert({
-            id: data.user.id,
-            onboarded: false
-          });
-
-        if (profileError) throw profileError;
-
         // Show success message
         setSuccess(true);
         

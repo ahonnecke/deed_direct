@@ -1,2 +1,2 @@
-export function createPublicClient(){ return { auth: { getSession: async ()=>({data:{session:null}}), signInWithOtp: ()=>{}, signOut: ()=>{} } } }
-export function createSSRClient(cookies:any){ return { auth: { getSession: async ()=>({data:{session:null}}) } } }
+// Direct export from src/client.ts
+export { createPublicClient, createSSRClient } from './src/client';

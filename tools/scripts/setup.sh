@@ -294,28 +294,42 @@ log "Project URL: $PROJECT_URL"
 # Link to the project
 log "Linking to Supabase project..."
 
-# Link with the password we just created - retry up to 5 times
+# First, verify the database password from the file
+if [ -f "template_postgres_pw" ]; then
+  DB_PASSWORD=$(cat template_postgres_pw)
+  log "Retrieved database password from template_postgres_pw file"
+fi
+
+# Make sure we have a password
+if [ -z "$DB_PASSWORD" ]; then
+  error "Database password not found. Cannot link project."
+fi
+
+# Link with the password - retry up to 5 times
 log "Linking project with database password..."
 for i in {1..5}; do
   log "Attempt $i/5: Linking to project..."
-  LINK_OUTPUT=$($SUPABASE_CMD link --project-ref "$PROJECT_ID" --password "$DB_PASSWORD" 2>&1)
-  LINK_STATUS=$?
   
-  # Debug output
-  log "Link command exit status: $LINK_STATUS"
+  # On first attempt, show the command output for debugging
+  if [ $i -eq 1 ]; then
+    log "Running link command with verbose output:"
+    $SUPABASE_CMD link --project-ref "$PROJECT_ID" --password "$DB_PASSWORD"
+    LINK_STATUS=$?
+  else
+    $SUPABASE_CMD link --project-ref "$PROJECT_ID" --password "$DB_PASSWORD" &> /dev/null
+    LINK_STATUS=$?
+  fi
   
   if [ $LINK_STATUS -eq 0 ]; then
     log "Successfully linked to project!"
     break
+  fi
+  
+  if [ $i -eq 5 ]; then
+    error "Failed to link project after 5 attempts. Please check your database password."
   else
-    log "Link attempt output: $LINK_OUTPUT"
-    
-    if [ $i -eq 5 ]; then
-      error "Failed to link project after 5 attempts. Please check your database password."
-    else
-      log "Link attempt failed. Waiting 10 seconds before retry..."
-      sleep 10
-    fi
+    log "Link attempt failed. Waiting before retry..."
+    sleep 10
   fi
 done
 
