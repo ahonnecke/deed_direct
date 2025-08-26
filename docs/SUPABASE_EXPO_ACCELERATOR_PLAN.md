@@ -54,18 +54,28 @@ Everything else from the original plan stays intact (Supabase, TypeScript, Zod, 
 
 ### Phase 4 — Database enhancements
 - Add `updated_at` triggers, `profiles.preferences` JSONB, and indexes.
+- **Notifications system** with Supabase realtime subscriptions.
+- **Feature flags** table for toggling features.
+- **Webhooks system** for external service integration.
+- **User feedback** collection mechanism.
 
 ### Phase 5 — Auth hardening
 - Add password auth, rate-limits, refresh token rotation.
+- **Admin dashboard** for user management and system monitoring.
+- **Stripe integration** for subscription/payment management.
 
 ### Phase 6 — Mobile pass
 - Offline strategy, deep links, biometrics, push (Expo).
+- **Multi-language support** with i18n framework.
+- **Theme system** with light/dark mode support.
 
 ### Phase 7 — Performance
-- Suspense boundaries, image optimization, PWA, React Query prefetch.
+- Suspense boundaries, image optimization, React Query prefetch.
+- **PWA setup** for better mobile web experience.
+- **Analytics integration** with privacy controls.
 
 ### Phase 8 — Testing
-- Playwright (web), component tests for shared UI, API mocks, test data generators.
+- **Playwright** E2E testing for web, component tests for shared UI, API mocks, test data generators.
 
 ---
 
@@ -125,9 +135,145 @@ When you want extraction/optimizations:
 - ⬜ `/app/profile` working against RLS.  
 - ⬜ CI building Docker image.
 
+### Future Milestones
+- ⬜ Notifications system with Supabase realtime.
+- ⬜ Theme system with light/dark mode.
+- ⬜ Feature flags implementation.
+- ⬜ Webhooks system for integrations.
+- ⬜ Playwright E2E testing setup.
+- ⬜ Analytics with privacy controls.
+- ⬜ Stripe subscription management.
+- ⬜ Multi-language support (i18n).
+- ⬜ User feedback collection system.
+- ⬜ Admin dashboard.
+- ⬜ PWA configuration.
+
 ---
 
 ## Risks / gotchas (with remedies)
 - **Edge runtime warnings** from Supabase packages → use SSR/browser client split later.
 - **Tamagui plugin build errors** → keep it disabled until you want extraction; current setup works without it.
 - **pnpm version drift** → pin via `packageManager` in root `package.json` and/or `corepack use pnpm@9`.
+
+---
+
+## Feature Implementation Details
+
+### Notifications System
+```sql
+-- Add to migrations/0001_base.sql
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  message text not null,
+  read boolean not null default false,
+  data jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_notifications_user_id on public.notifications (user_id);
+create index if not exists idx_notifications_read on public.notifications (read);
+```
+
+### Theme System
+```typescript
+// packages/shared/src/types/user.ts
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  // Add other preference options here
+}
+```
+
+### Feature Flags
+```sql
+-- Add to migrations
+create table if not exists public.feature_flags (
+  key text primary key,
+  enabled boolean not null default false,
+  description text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+### Webhooks System
+```sql
+-- Add to migrations
+create table if not exists public.webhooks (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid references public.orgs(id) on delete cascade,
+  url text not null,
+  events text[] not null,
+  secret text not null,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+### Playwright Testing
+```bash
+# Install Playwright in web app
+pnpm --filter web add -D @playwright/test
+
+# Generate config
+pnpm --filter web exec -- npx playwright install
+pnpm --filter web exec -- npx playwright init
+```
+
+### Analytics Integration
+```typescript
+// packages/shared/src/analytics/index.ts
+export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
+  // Integration with your preferred analytics provider
+  // With user preference check for privacy
+};
+```
+
+### Stripe Integration
+```sql
+-- Add to migrations
+create table if not exists public.subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  status text not null check (status in ('active','canceled','past_due','trialing')),
+  plan_id text not null,
+  current_period_end timestamptz not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+### Multi-language Support
+```typescript
+// packages/shared/src/i18n/index.ts
+export const translations = {
+  en: { /* English strings */ },
+  es: { /* Spanish strings */ },
+  // Add more languages as needed
+};
+```
+
+### User Feedback System
+```sql
+create table if not exists public.feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  type text not null check (type in ('bug','feature','general')),
+  message text not null,
+  resolved boolean not null default false,
+  created_at timestamptz not null default now()
+);
+```
+
+### Admin Dashboard
+```typescript
+// apps/web/app/admin/page.tsx
+// With proper RLS policies in Supabase for admin-only access
+```
+
+### PWA Setup
+```typescript
+// Add to apps/web/next.config.mjs
+// PWA configuration with next-pwa
+```
