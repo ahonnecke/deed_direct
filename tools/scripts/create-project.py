@@ -74,7 +74,7 @@ def generate_secure_password(length: int = 16) -> str:
     # Use secrets module for cryptographically strong random numbers
     # Avoid characters that could cause issues in command-line arguments
     # Specifically avoid: !$&()*;<>?[]\`|' and other shell special characters
-    safe_alphabet = string.ascii_letters + string.digits + "#%+,-./:=@^_{}"
+    safe_alphabet = string.ascii_letters + string.digits
     password = "".join(secrets.choice(safe_alphabet) for _ in range(length))
     return password
 
@@ -82,7 +82,7 @@ def generate_secure_password(length: int = 16) -> str:
 def check_supabase_login() -> bool:
     """Check if the user is logged in to Supabase CLI."""
     log("Checking Supabase login status...")
-    
+
     # Try to list projects as a login test
     result = run_command(["npx", "supabase", "projects", "list"], check=False)
     return result.returncode == 0
@@ -112,15 +112,18 @@ def get_project_name(args) -> str:
 
     # Default suggestion
     default_name = package_name or "supa-accelerator"
-    
+
     # In non-interactive mode, use the default name
     if args.non_interactive:
         log(f"Using default project name (non-interactive mode): {default_name}")
         return default_name
-    
+
     # Prompt for project name in interactive mode
     try:
-        print(f"\n{COLORS['cyan']}Enter project name {COLORS['reset']}[{default_name}]: ", end="")
+        print(
+            f"\n{COLORS['cyan']}Enter project name {COLORS['reset']}[{default_name}]: ",
+            end="",
+        )
         user_input = input().strip()
         project_name = user_input if user_input else default_name
         log(f"Using project name: {project_name}")
@@ -135,19 +138,21 @@ def check_project_exists(project_name: str) -> bool:
     """Check if a project with the given name already exists."""
     log(f"Checking if project '{project_name}' already exists...")
 
-    result = run_command(["npx", "supabase", "projects", "list", "-o", "json"], check=True)
-    
+    result = run_command(
+        ["npx", "supabase", "projects", "list", "-o", "json"], check=True
+    )
+
     try:
         projects = json.loads(result.stdout)
-        
+
         if not projects:
             return False
-            
+
         # Check if project exists in the list
         for project in projects:
             if project.get("name") == project_name:
                 return True
-                
+
         return False
     except json.JSONDecodeError:
         error(f"Invalid JSON response from Supabase CLI: {result.stdout}")
@@ -176,11 +181,13 @@ def create_project(project_name: str, org_id: str, region: str) -> Tuple[str, st
         ],
         check=True,
     )
-    
+
     # Get project ID
     project_id = get_project_id(project_name)
     if not project_id:
-        error("Failed to retrieve project ID. Project may not have been created successfully.")
+        error(
+            "Failed to retrieve project ID. Project may not have been created successfully."
+        )
 
     return project_id, db_password
 
@@ -189,8 +196,10 @@ def get_project_id(project_name: str) -> str:
     """Get the project ID for a given project name."""
     log("Retrieving project ID...")
 
-    result = run_command(["npx", "supabase", "projects", "list", "-o", "json"], check=True)
-    
+    result = run_command(
+        ["npx", "supabase", "projects", "list", "-o", "json"], check=True
+    )
+
     try:
         projects = json.loads(result.stdout)
         for project in projects:
@@ -199,11 +208,11 @@ def get_project_id(project_name: str) -> str:
                 if project_id:
                     log(f"Project ID retrieved: {project_id}")
                     return project_id
-        
+
         error(f"Project '{project_name}' not found in projects list")
     except json.JSONDecodeError:
         error(f"Invalid JSON response: {result.stdout}")
-    
+
     return ""
 
 
@@ -242,7 +251,7 @@ def get_api_keys(project_id: str) -> Tuple[str, str]:
             error("Failed to retrieve API keys from response")
     except json.JSONDecodeError:
         error(f"Invalid JSON response when retrieving API keys: {result.stdout}")
-    
+
     return "", ""
 
 
@@ -292,7 +301,7 @@ def update_env_file(
             env_content = pattern.sub(f"{key}={value}", env_content)
         else:
             env_content += f"\n{key}={value}"
-    
+
     # Also update the Next.js and Expo public variables
     if project_url:
         for key in ["NEXT_PUBLIC_SUPABASE_URL", "EXPO_PUBLIC_SUPABASE_URL"]:
@@ -301,7 +310,7 @@ def update_env_file(
                 env_content = pattern.sub(f"{key}={project_url}", env_content)
             else:
                 env_content += f"\n{key}={project_url}"
-    
+
     if anon_key:
         for key in ["NEXT_PUBLIC_SUPABASE_ANON_KEY", "EXPO_PUBLIC_SUPABASE_ANON_KEY"]:
             pattern = re.compile(f"^{key}=.*", re.MULTILINE)
@@ -324,7 +333,7 @@ def main():
     # Define default values that will be overridden if import succeeds
     SUPABASE_ORG_ID = None
     SUPABASE_REGION = None
-    
+
     try:
         from supabase_config import SUPABASE_ORG_ID, SUPABASE_REGION
     except ImportError:
@@ -334,7 +343,7 @@ def main():
         except ImportError:
             log("Warning: Could not import supabase_config.py, will exit")
             sys.exit(1)
-    
+
     parser = argparse.ArgumentParser(description="Create a Supabase project")
     parser.add_argument(
         "--org-id", default=SUPABASE_ORG_ID, help="Supabase organization ID"
@@ -343,7 +352,9 @@ def main():
         "--region", default=SUPABASE_REGION, help="Region for the Supabase project"
     )
     parser.add_argument(
-        "--non-interactive", action="store_true", help="Run in non-interactive mode (will use default values)"
+        "--non-interactive",
+        action="store_true",
+        help="Run in non-interactive mode (will use default values)",
     )
     args = parser.parse_args()
 
@@ -363,16 +374,23 @@ def main():
     if check_project_exists(project_name):
         if args.non_interactive:
             # In non-interactive mode, just error out
-            error(f"Project '{project_name}' already exists. Please use a different name or delete the existing project.")
+            error(
+                f"Project '{project_name}' already exists. Please use a different name or delete the existing project."
+            )
         else:
             # In interactive mode, prompt for a new name
             while check_project_exists(project_name):
                 warning(f"Project '{project_name}' already exists.")
-                print(f"\n{COLORS['cyan']}Enter a different project name{COLORS['reset']}: ", end="")
+                print(
+                    f"\n{COLORS['cyan']}Enter a different project name{COLORS['reset']}: ",
+                    end="",
+                )
                 try:
                     user_input = input().strip()
                     if not user_input:
-                        error("Project name cannot be empty. Project creation cancelled.")
+                        error(
+                            "Project name cannot be empty. Project creation cancelled."
+                        )
                     project_name = user_input
                     log(f"Trying project name: {project_name}")
                 except KeyboardInterrupt:
