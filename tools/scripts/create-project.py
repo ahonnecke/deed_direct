@@ -92,26 +92,41 @@ def login_to_supabase() -> None:
 
 
 def get_project_name(args) -> str:
-    """Get the project name from arguments or package.json."""
+    """Get the project name from arguments, package.json, or user input."""
     if args.project_name:
         return args.project_name
 
     # Try to get project name from package.json
+    package_name = None
     if os.path.exists("package.json"):
         try:
             with open("package.json", "r") as f:
                 package_data = json.load(f)
                 if "name" in package_data:
-                    project_name = package_data["name"].lower().replace(" ", "-")
-                    log(f"Using project name from package.json: {project_name}")
-                    return project_name
+                    package_name = package_data["name"].lower().replace(" ", "-")
+                    log(f"Found project name in package.json: {package_name}")
         except (json.JSONDecodeError, IOError) as e:
             warning(f"Failed to read package.json: {e}")
 
-    # Default project name
-    default_name = "supa-accelerator"
-    log(f"Using default project name: {default_name}")
-    return default_name
+    # Default suggestion
+    default_name = package_name or "supa-accelerator"
+    
+    # In non-interactive mode, use the default name
+    if args.non_interactive:
+        log(f"Using default project name (non-interactive mode): {default_name}")
+        return default_name
+    
+    # Prompt for project name in interactive mode
+    try:
+        print(f"\n{COLORS['cyan']}Enter project name {COLORS['reset']}[{default_name}]: ", end="")
+        user_input = input().strip()
+        project_name = user_input if user_input else default_name
+        log(f"Using project name: {project_name}")
+        return project_name
+    except KeyboardInterrupt:
+        print("\n")
+        error("Project creation cancelled by user")
+        return ""
 
 
 def check_project_exists(project_name: str) -> bool:
@@ -307,12 +322,15 @@ def update_env_file(
 def main():
     """Main function to run the setup script."""
     parser = argparse.ArgumentParser(description="Create a Supabase project")
-    parser.add_argument("--project-name", help="Name of the Supabase project")
+    parser.add_argument("--project-name", help="Name of the Supabase project (if not provided, will prompt interactively)")
     parser.add_argument(
         "--org-id", default="wtzdspvojbntegninaxc", help="Supabase organization ID"
     )
     parser.add_argument(
         "--region", default="us-west-1", help="Region for the Supabase project"
+    )
+    parser.add_argument(
+        "--non-interactive", action="store_true", help="Run in non-interactive mode (will use default values)"
     )
     args = parser.parse_args()
 
@@ -330,9 +348,23 @@ def main():
 
     # Check if project already exists
     if check_project_exists(project_name):
-        error(
-            f"Project '{project_name}' already exists. Please use a different name or delete the existing project."
-        )
+        if args.non_interactive:
+            # In non-interactive mode, just error out
+            error(f"Project '{project_name}' already exists. Please use a different name or delete the existing project.")
+        else:
+            # In interactive mode, prompt for a new name
+            while check_project_exists(project_name):
+                warning(f"Project '{project_name}' already exists.")
+                print(f"\n{COLORS['cyan']}Enter a different project name{COLORS['reset']}: ", end="")
+                try:
+                    user_input = input().strip()
+                    if not user_input:
+                        error("Project name cannot be empty. Project creation cancelled.")
+                    project_name = user_input
+                    log(f"Trying project name: {project_name}")
+                except KeyboardInterrupt:
+                    print("\n")
+                    error("Project creation cancelled by user")
 
     # Create new project
     project_id, db_password = create_project(project_name, args.org_id, args.region)
