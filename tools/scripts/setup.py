@@ -625,6 +625,11 @@ def setup_auth_urls() -> bool:
 def main():
     """Main function to run the setup script."""
     # Import configuration values from the centralized config file
+    # Import configuration values
+    # Define default values that will be overridden if import succeeds
+    SUPABASE_ORG_ID = None
+    SUPABASE_REGION = None
+    
     try:
         from supabase_config import SUPABASE_ORG_ID, SUPABASE_REGION
     except ImportError:
@@ -632,10 +637,8 @@ def main():
         try:
             from .supabase_config import SUPABASE_ORG_ID, SUPABASE_REGION
         except ImportError:
-            # Use hardcoded defaults as fallback if config file is not available
-            SUPABASE_ORG_ID = "wtzdspvojbntegninaxc"
-            SUPABASE_REGION = "us-west-1"
-            print("Warning: Could not import supabase_config.py, using hardcoded defaults")
+            print("Warning: Could not import supabase_config.py, will exit")
+            sys.exit(1)
     
     parser = argparse.ArgumentParser(description="Set up a Supabase project")
     parser.add_argument("--project-name", help="Name of the Supabase project")
