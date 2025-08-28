@@ -38,15 +38,10 @@ sb.migration-status:
 	@echo "Checking migration status..."
 	$(SUPABASE_CMD) migration status
 
-# Create a new Supabase project
-# Usage: make setup.create-project [project_name=your-project-name]
+# Create a new Supabase project (always interactive)
 setup.create-project:
 	@echo "Creating new Supabase project..."
-	@if [ "$(project_name)" != "" ]; then \
-		python3 ./tools/scripts/create-project.py --project-name "$(project_name)"; \
-	else \
-		python3 ./tools/scripts/create-project.py; \
-	fi
+	python3 ./tools/scripts/create-project.py
 
 # Link to existing project
 setup.link:
@@ -116,8 +111,7 @@ dev.test:
 help:
 	@echo "Setup Commands (one-time use):"
 	@echo "  make setup.all          - Complete setup (create project, link, configure, and run migrations)"
-	@echo "  make setup.create-project - Create a new Supabase project (interactive)"
-	@echo "  make setup.create-project project_name=your-project-name - Create a new Supabase project with specified name"
+	@echo "  make setup.create-project - Create a new Supabase project (always interactive)"
 	@echo "  make setup.link           - Link to existing Supabase project"
 	@echo "  make setup.link-and-migrate - Link to project and run migrations in one step"
 	@echo ""

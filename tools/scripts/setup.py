@@ -195,12 +195,9 @@ def create_project(project_name: str, org_id: str, region: str) -> Tuple[str, st
                 "projects",
                 "create",
                 project_name,
-                "--org-id",
-                org_id,
-                "--db-password",
-                db_password,
-                "--region",
-                region,
+                f"--org-id={org_id}",
+                f"--db-password={db_password}",
+                f"--region={region}",
             ],
             check=False,
         )
@@ -627,13 +624,26 @@ def setup_auth_urls() -> bool:
 
 def main():
     """Main function to run the setup script."""
+    # Import configuration values from the centralized config file
+    try:
+        from supabase_config import SUPABASE_ORG_ID, SUPABASE_REGION
+    except ImportError:
+        # Fallback to local import if the file is in the same directory
+        try:
+            from .supabase_config import SUPABASE_ORG_ID, SUPABASE_REGION
+        except ImportError:
+            # Use hardcoded defaults as fallback if config file is not available
+            SUPABASE_ORG_ID = "wtzdspvojbntegninaxc"
+            SUPABASE_REGION = "us-west-1"
+            print("Warning: Could not import supabase_config.py, using hardcoded defaults")
+    
     parser = argparse.ArgumentParser(description="Set up a Supabase project")
     parser.add_argument("--project-name", help="Name of the Supabase project")
     parser.add_argument(
-        "--org-id", default="wtzdspvojbntegninaxc", help="Supabase organization ID"
+        "--org-id", default=SUPABASE_ORG_ID, help="Supabase organization ID"
     )
     parser.add_argument(
-        "--region", default="us-west-1", help="Region for the Supabase project"
+        "--region", default=SUPABASE_REGION, help="Region for the Supabase project"
     )
     args = parser.parse_args()
 

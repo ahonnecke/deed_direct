@@ -69,10 +69,12 @@ def run_command(
 
 
 def generate_secure_password(length: int = 16) -> str:
-    """Generate a secure password."""
+    """Generate a secure password that's safe for command-line usage."""
     # Use secrets module for cryptographically strong random numbers
-    alphabet = string.ascii_letters + string.digits + "!#$%&()*+,-./:;<=>?@[]^_`{|}~"
-    password = "".join(secrets.choice(alphabet) for _ in range(length))
+    # Avoid characters that could cause issues in command-line arguments
+    # Specifically avoid: !$&()*;<>?[]\`|' and other shell special characters
+    safe_alphabet = string.ascii_letters + string.digits + "#%+,-./:=@^_{}"
+    password = "".join(secrets.choice(safe_alphabet) for _ in range(length))
     return password
 
 
@@ -92,9 +94,8 @@ def login_to_supabase() -> None:
 
 
 def get_project_name(args) -> str:
-    """Get the project name from arguments, package.json, or user input."""
-    if args.project_name:
-        return args.project_name
+    """Get the project name from package.json or user input. Always interactive."""
+    # Project name is always interactive now, no CLI argument
 
     # Try to get project name from package.json
     package_name = None
@@ -160,7 +161,7 @@ def create_project(project_name: str, org_id: str, region: str) -> Tuple[str, st
     db_password = generate_secure_password()
     log("Generated secure database password")
 
-    # Create the project
+    # Create the project - properly handle the password by using a single argument for each flag+value pair
     result = run_command(
         [
             "npx",
@@ -168,12 +169,9 @@ def create_project(project_name: str, org_id: str, region: str) -> Tuple[str, st
             "projects",
             "create",
             project_name,
-            "--org-id",
-            org_id,
-            "--db-password",
-            db_password,
-            "--region",
-            region,
+            f"--org-id={org_id}",
+            f"--db-password={db_password}",
+            f"--region={region}",
         ],
         check=True,
     )
@@ -218,8 +216,7 @@ def get_api_keys(project_id: str) -> Tuple[str, str]:
             "supabase",
             "projects",
             "api-keys",
-            "--project-ref",
-            project_id,
+            f"--project-ref={project_id}",
             "-o",
             "json",
         ],
@@ -321,13 +318,25 @@ def update_env_file(
 
 def main():
     """Main function to run the setup script."""
+    # Import configuration values from the centralized config file
+    try:
+        from supabase_config import SUPABASE_ORG_ID, SUPABASE_REGION
+    except ImportError:
+        # Fallback to local import if the file is in the same directory
+        try:
+            from .supabase_config import SUPABASE_ORG_ID, SUPABASE_REGION
+        except ImportError:
+            # Use hardcoded defaults as fallback if config file is not available
+            SUPABASE_ORG_ID = "wtzdspvojbntegninaxc"
+            SUPABASE_REGION = "us-west-1"
+            log("Warning: Could not import supabase_config.py, using hardcoded defaults")
+    
     parser = argparse.ArgumentParser(description="Create a Supabase project")
-    parser.add_argument("--project-name", help="Name of the Supabase project (if not provided, will prompt interactively)")
     parser.add_argument(
-        "--org-id", default="wtzdspvojbntegninaxc", help="Supabase organization ID"
+        "--org-id", default=SUPABASE_ORG_ID, help="Supabase organization ID"
     )
     parser.add_argument(
-        "--region", default="us-west-1", help="Region for the Supabase project"
+        "--region", default=SUPABASE_REGION, help="Region for the Supabase project"
     )
     parser.add_argument(
         "--non-interactive", action="store_true", help="Run in non-interactive mode (will use default values)"
