@@ -1,4 +1,4 @@
-.PHONY: setup.all setup.create-project setup.link setup.link-and-migrate sb.run-migrations sb.reset-db sb.local-start sb.local-stop sb.sync-config sb.list-migrations sb.login sb.migration-status docker.up docker.down docker.build dev.all dev.web dev.mobile dev.install dev.typecheck dev.test help
+.PHONY: setup.all setup.create-project setup.link setup.link-and-migrate sb.run-migrations sb.reset-db sb.local-start sb.local-stop sb.sync-config sb.list-migrations sb.login sb.logout sp.login sp.logout sb.migration-status docker.up docker.down docker.build dev.all dev.web dev.mobile dev.install dev.typecheck dev.test help
 
 # Default Supabase CLI command
 SUPABASE_CMD := npx supabase
@@ -7,6 +7,11 @@ SUPABASE_CMD := npx supabase
 sb.login:
 	@echo "Running Supabase login..."
 	$(SUPABASE_CMD) login
+
+# Logout from Supabase
+sb.logout:
+	@echo "Logging out from Supabase..."
+	$(SUPABASE_CMD) logout
 
 # Sync config from remote project
 sb.sync-config:
@@ -115,8 +120,11 @@ help:
 	@echo "  make setup.link           - Link to existing Supabase project"
 	@echo "  make setup.link-and-migrate - Link to project and run migrations in one step"
 	@echo ""
-	@echo "Supabase Commands (sb.):"
+	@echo "Supabase Commands (sb. or sp.):"
 	@echo "  make sb.login          - Login to Supabase"
+	@echo "  make sb.logout         - Logout from Supabase"
+	@echo "  make sp.login          - Login to Supabase (alternative)"
+	@echo "  make sp.logout         - Logout from Supabase (alternative)"
 	@echo "  make sb.sync-config    - Sync config from remote project (db pull)"
 	@echo "  make sb.list-migrations - List all migrations and their status"
 	@echo "  make sb.migration-status - Check migration status"

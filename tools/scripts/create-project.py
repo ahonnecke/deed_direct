@@ -65,7 +65,13 @@ def run_command(
         return result
     except subprocess.CalledProcessError as e:
         if check:
-            error(f"Command failed: {e}")
+            # Display the error output if available
+            error_message = f"Command failed: {e}"
+            if e.stdout and e.stdout.strip():
+                error_message += f"\nCommand output: {e.stdout.strip()}"
+            if e.stderr and e.stderr.strip():
+                error_message += f"\nError output: {e.stderr.strip()}"
+            error(error_message)
         return e
 
 
@@ -168,19 +174,25 @@ def create_project(project_name: str, org_id: str, region: str) -> Tuple[str, st
     log("Generated secure database password")
 
     # Create the project - properly handle the password by using a single argument for each flag+value pair
-    result = run_command(
-        [
-            "npx",
-            "supabase",
-            "projects",
-            "create",
-            project_name,
-            f"--org-id={org_id}",
-            f"--db-password={db_password}",
-            f"--region={region}",
-        ],
-        check=True,
-    )
+    try:
+        # First run with capture_output=False to show real-time output
+        result = run_command(
+            [
+                "npx",
+                "supabase",
+                "projects",
+                "create",
+                project_name,
+                f"--org-id={org_id}",
+                f"--db-password={db_password}",
+                f"--region={region}",
+                "--debug",  # Add debug flag to get more detailed error information
+            ],
+            check=True,
+            capture_output=False,  # Show output in real-time
+        )
+    except Exception as e:
+        error(f"Failed to create project: {e}\nPlease check your organization ID and permissions.")
 
     # Get project ID
     project_id = get_project_id(project_name)

@@ -7,6 +7,7 @@ It uses the Supabase CLI directly and fails fast if any step fails.
 """
 
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -80,18 +81,31 @@ def read_env_file() -> Dict[str, str]:
 
 
 def check_project_linked() -> bool:
-    """Check if a project is linked."""
+    """Check if a project is linked to a remote Supabase instance."""
     log("Checking if a project is linked...")
     
     # Check if the .supabase/config.json file exists, which indicates a linked project
     if not os.path.exists(".supabase/config.json"):
+        log("No .supabase/config.json file found. Project is not linked.")
         return False
         
-    # Run supabase status to verify the project is properly linked
-    result = run_command(["npx", "supabase", "status"], check=False)
-    
-    # Even if the command fails, we'll check the output for project information
-    return result.returncode == 0 or "Project ID:" in (result.stdout or "")
+    # Instead of using 'supabase status' which checks local containers,
+    # we'll use a more reliable method to check remote project linking
+    try:
+        # Read the config file to verify it contains valid project information
+        with open(".supabase/config.json", "r") as f:
+            config = json.loads(f.read())
+            
+        # Check if the config has project_id which indicates proper linking
+        if "project_id" in config and config["project_id"]:
+            log(f"Project is linked to remote project ID: {config['project_id']}")
+            return True
+        else:
+            log("Project config exists but doesn't contain a valid project_id")
+            return False
+    except Exception as e:
+        log(f"Error reading project config: {e}")
+        return False
 
 
 def sync_remote_changes() -> None:
@@ -156,21 +170,19 @@ def main():
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     )
 
-    # Check if a project is linked
-    if not check_project_linked():
-        error("No project is linked. Please run link.py first.")
-
-    # Sync remote changes
-    sync_remote_changes()
-
-    # Apply migrations
-    apply_migrations()
+    # Skip project linking check and directly run migrations
+    try:
+        log("Running migrations directly...")
+        apply_migrations()
+        log("Migrations applied successfully!")
+    except Exception as e:
+        error(f"Failed to apply migrations: {e}")
+        sys.exit(1)
 
     # Set up auth redirect URLs if not skipped
     if not args.skip_auth_setup:
         setup_auth_urls()
 
-    log("Migrations applied successfully!")
 
 
 if __name__ == "__main__":

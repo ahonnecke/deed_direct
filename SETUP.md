@@ -34,10 +34,22 @@ This project provides a streamlined Supabase setup process that uses direct Supa
 ```bash
 # Create a new Supabase project (generates secure password, creates project, updates .env)
 make create-project
+```
 
+This process puts the OLD style api keys into the .env file.
+Go to project > settings > api keys
+disable "legacy api keys"
+
+go to API Keys tab > "create new api keys"
+
+
+
+
+```bash
 # Link to the newly created project and apply migrations in one step
 make link-and-migrate
 ```
+
 ### A.2 Set up environment
 These values don't exist until after project creation.
 Copy the example env file to `.env` (used by Docker Compose and local runs) and fill in keys from your Supabase project.
