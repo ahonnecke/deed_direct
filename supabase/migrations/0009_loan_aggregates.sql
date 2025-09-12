@@ -9,8 +9,8 @@ BEGIN;
 -- Aggregates & due dates: keep loans.* in sync with loan_payments
 -- ------------------------------------------------
 
--- DEFAULT behavior: only count installments *you have checked off* (is_paid=TRUE)
--- toward loans.total_amount_paid. This fits a "checklist" workflow.
+-- DEFAULT behavior: only count installments *you have checked off* (is_recieved=TRUE)
+-- toward loans.total_amount_recieved. This fits a "checklist" workflow.
 CREATE OR REPLACE FUNCTION recompute_loan_aggregates()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -20,15 +20,15 @@ BEGIN
 
   UPDATE loans l
   SET
-    total_amount_paid = COALESCE((
-      SELECT SUM(lp.paid_amount)
+    total_amount_recieved = COALESCE((
+      SELECT SUM(lp.recieved_amount)
       FROM loan_payments lp
-      WHERE lp.loan_id = v_loan_id AND lp.is_paid = TRUE
+      WHERE lp.loan_id = v_loan_id AND lp.is_recieved = TRUE
     ), 0),
     next_payment_due = (
       SELECT MIN(lp.due_date)
       FROM loan_payments lp
-      WHERE lp.loan_id = v_loan_id AND lp.is_paid = FALSE
+      WHERE lp.loan_id = v_loan_id AND lp.is_recieved = FALSE
     ),
     expected_last_payment = (
       SELECT MAX(lp.due_date)
@@ -65,15 +65,15 @@ BEGIN
 
   UPDATE loans l
   SET
-    total_amount_paid = COALESCE((
-      SELECT SUM(COALESCE(lp.paid_amount,0))
+    total_amount_recieved = COALESCE((
+      SELECT SUM(COALESCE(lp.recieved_amount,0))
       FROM loan_payments lp
       WHERE lp.loan_id = v_loan_id
     ), 0),
     next_payment_due = (
       SELECT MIN(lp.due_date)
       FROM loan_payments lp
-      WHERE lp.loan_id = v_loan_id AND lp.is_paid = FALSE
+      WHERE lp.loan_id = v_loan_id AND lp.is_recieved = FALSE
     ),
     expected_last_payment = (
       SELECT MAX(lp.due_date)
