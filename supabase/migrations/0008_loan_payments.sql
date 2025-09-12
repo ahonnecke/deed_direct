@@ -20,19 +20,19 @@ CREATE TABLE IF NOT EXISTS loan_payments (
   -- Often equals loans.payment_amount, but can vary (prorates, fees, adjustments).
   expected_amount NUMERIC(14,2) NOT NULL CHECK (expected_amount >= 0),
 
-  -- What has actually been recieved toward THIS installment (can be partial or full).
+  -- What has actually been received toward THIS installment (can be partial or full).
   -- If you track multiple receipts, you can either sum them here,
   -- or create a loan_receipts table and keep this as a cached/cumulative value.
-  recieved_amount NUMERIC(14,2) CHECK (recieved_amount IS NULL OR recieved_amount >= 0),
+  received_amount NUMERIC(14,2) CHECK (received_amount IS NULL OR received_amount >= 0),
 
   -- Factual date funds CLEARED for this installment.
   -- For partials: update to the FINAL clearance date when the installment becomes fully satisfied.
-  recieved_date DATE,
+  received_date DATE,
 
   -- Your "checkbox": has this installment been satisfied?
-  -- This is intentionally NOT auto-derived so you can treat short-pays/waivers as "recieved" if business rules allow.
-  -- Guardrail below enforces that if is_recieved = TRUE, both recieved_amount AND recieved_date must be present.
-  is_recieved BOOLEAN NOT NULL DEFAULT FALSE,
+  -- This is intentionally NOT auto-derived so you can treat short-pays/waivers as "received" if business rules allow.
+  -- Guardrail below enforces that if is_received = TRUE, both received_amount AND received_date must be present.
+  is_received BOOLEAN NOT NULL DEFAULT FALSE,
 
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -40,29 +40,29 @@ CREATE TABLE IF NOT EXISTS loan_payments (
   -- Prevent duplicate schedule rows for the same due date on the same loan.
   UNIQUE (loan_id, due_date),
 
-  -- Guardrail: when marked recieved, require both recieved_amount and recieved_date.
+  -- Guardrail: when marked received, require both received_amount and received_date.
   CHECK (
-    (is_recieved = FALSE)
+    (is_received = FALSE)
     OR
-    (is_recieved = TRUE AND recieved_amount IS NOT NULL AND recieved_date IS NOT NULL)
+    (is_received = TRUE AND received_amount IS NOT NULL AND received_date IS NOT NULL)
   )
 
-  -- OPTIONAL (uncomment if you NEVER allow short-pays to count as "recieved"):
-  -- , CHECK (is_recieved = FALSE OR recieved_amount >= expected_amount)
+  -- OPTIONAL (uncomment if you NEVER allow short-pays to count as "received"):
+  -- , CHECK (is_received = FALSE OR received_amount >= expected_amount)
 );
 
 COMMENT ON COLUMN loan_payments.expected_amount IS
 'Authoritative per-installment expectation. This is what is due for that period.';
-COMMENT ON COLUMN loan_payments.recieved_amount IS
+COMMENT ON COLUMN loan_payments.received_amount IS
 'Actual cash received toward this installment (allows partials). If using a receipts table, keep this as the running sum.';
-COMMENT ON COLUMN loan_payments.recieved_date IS
+COMMENT ON COLUMN loan_payments.received_date IS
 'Date funds cleared. For partials, set to the final clearance date when the installment becomes fully satisfied.';
-COMMENT ON COLUMN loan_payments.is_recieved IS
-'Business decision that this installment is satisfied (not merely that cash arrived). Allows waivers/short-pays to count as recieved if desired.';
+COMMENT ON COLUMN loan_payments.is_received IS
+'Business decision that this installment is satisfied (not merely that cash arrived). Allows waivers/short-pays to count as received if desired.';
 
 CREATE INDEX IF NOT EXISTS loan_payments_loan_idx      ON loan_payments (loan_id);
 CREATE INDEX IF NOT EXISTS loan_payments_due_idx       ON loan_payments (loan_id, due_date);
-CREATE INDEX IF NOT EXISTS loan_payments_unrecieved_idx    ON loan_payments (loan_id, is_recieved, due_date);
+CREATE INDEX IF NOT EXISTS loan_payments_unreceived_idx    ON loan_payments (loan_id, is_received, due_date);
 
 -- Add updated_at trigger for loan_payments table
 DO $$

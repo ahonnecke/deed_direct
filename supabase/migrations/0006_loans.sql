@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS loans (
   first_payment_due DATE,
 
   -- next_payment_due is typically maintained by a trigger (below) or your app
-  -- as the MIN(loan_payments.due_date) where is_recieved = FALSE.
+  -- as the MIN(loan_payments.due_date) where is_received = FALSE.
   next_payment_due DATE,
 
   -- expected_last_payment is typically maintained by trigger/app
@@ -43,24 +43,24 @@ CREATE TABLE IF NOT EXISTS loans (
   -- Typical flow: set this (e.g., 250.00) and copy it into each schedule row when generating plan.
   payment_amount NUMERIC(14,2) CHECK (payment_amount IS NULL OR payment_amount >= 0),
 
-  -- total_amount_recieved is maintained by trigger/app.
-  -- By default (see trigger below) we sum ONLY installments marked as satisfied (is_recieved=TRUE).
+  -- total_amount_received is maintained by trigger/app.
+  -- By default (see trigger below) we sum ONLY installments marked as satisfied (is_received=TRUE).
   -- If you prefer to count ALL cash received (including partials), see the commented ALT function below.
-  total_amount_recieved   NUMERIC(16,2) NOT NULL DEFAULT 0 CHECK (total_amount_recieved >= 0),
+  total_amount_received   NUMERIC(16,2) NOT NULL DEFAULT 0 CHECK (total_amount_received >= 0),
 
-  -- total_interest_recieved is for interest accounting if you decompose receipts;
+  -- total_interest_received is for interest accounting if you decompose receipts;
   -- maintain via app logic or by extending triggers.
-  total_interest_recieved NUMERIC(16,2) NOT NULL DEFAULT 0 CHECK (total_interest_recieved >= 0),
+  total_interest_received NUMERIC(16,2) NOT NULL DEFAULT 0 CHECK (total_interest_received >= 0),
 
   purchase_price NUMERIC(16,2) CHECK (purchase_price IS NULL OR purchase_price >= 0)
 );
 
 COMMENT ON COLUMN loans.payment_amount IS
 'Default/template installment amount (e.g., 250.00). Real expectations live per-row in loan_payments.expected_amount.';
-COMMENT ON COLUMN loans.total_amount_recieved IS
-'Aggregate of payments received. Default trigger sums only satisfied installments (is_recieved=TRUE); switch to ALT trigger to include partials.';
+COMMENT ON COLUMN loans.total_amount_received IS
+'Aggregate of payments received. Default trigger sums only satisfied installments (is_received=TRUE); switch to ALT trigger to include partials.';
 COMMENT ON COLUMN loans.down_payment IS
-'Best practice: also insert a RECIEVED schedule row in loan_payments on contract_date with expected_amount=recieved_amount=down_payment and is_recieved=TRUE so totals count it exactly once.';
+'Best practice: also insert a RECEIVED schedule row in loan_payments on contract_date with expected_amount=received_amount=down_payment and is_received=TRUE so totals count it exactly once.';
 
 -- Add updated_at trigger for loans table
 DO $$
