@@ -21,3 +21,5 @@ htmlcov
 /.aider.chat.history.md
 /apps/web/tsconfig.tsbuildinfo
 /.turbo/
+/.env.backup
+/.env.prod

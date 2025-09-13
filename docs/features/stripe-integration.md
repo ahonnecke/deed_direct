@@ -44,7 +44,7 @@ create table if not exists public.invoices (
   user_id uuid not null references auth.users(id) on delete cascade,
   stripe_invoice_id text not null,
   amount_due integer not null,
-  amount_paid integer not null,
+  amount_received integer not null,
   currency text not null,
   invoice_pdf text,
   status text not null,
@@ -107,8 +107,8 @@ serve(async (req) => {
         case 'customer.subscription.updated':
           await handleSubscriptionChange(event.data.object);
           break;
-        case 'invoice.paid':
-          await handleInvoicePaid(event.data.object);
+        case 'invoice.received':
+          await handleInvoiceReceived(event.data.object);
           break;
         case 'payment_method.attached':
           await handlePaymentMethodAttached(event.data.object);
