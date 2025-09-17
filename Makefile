@@ -1,70 +1,70 @@
-.PHONY: setup.all setup.create-project setup.link setup.link-and-migrate sb.run-migrations sb.reset-db sb.local-start sb.local-stop sb.sync-config sb.list-migrations sb.login sb.logout sp.login sp.logout sb.migration-status docker.up docker.down docker.build dev.all dev.web dev.mobile dev.install dev.typecheck dev.test help
+.PHONY: init.all init.create-project init.link init.link-and-migrate supabase.run-migrations supabase.reset-db supabase.local-start supabase.local-stop supabase.sync-config supabase.list-migrations supabase.login supabase.logout sp.login sp.logout supabase.migration-status docker.up docker.down docker.build dev.all dev.web dev.mobile dev.install dev.typecheck dev.test help
 
 # Default Supabase CLI command
 SUPABASE_CMD := npx supabase
 
 # Login to Supabase
-sb.login:
+supabase.login:
 	@echo "Running Supabase login..."
 	$(SUPABASE_CMD) login
 
 # Logout from Supabase
-sb.logout:
+supabase.logout:
 	@echo "Logging out from Supabase..."
 	$(SUPABASE_CMD) logout
 
 # Sync config from remote project
-sb.sync-config:
+supabase.sync-config:
 	@echo "Syncing config from remote project..."
 	$(SUPABASE_CMD) db pull
 
 # Reset database and run all migrations
-sb.reset-db:
+supabase.reset-db:
 	@echo "Resetting database and running all migrations..."
 	$(SUPABASE_CMD) db reset
 
 # Start local Supabase
-sb.local-start:
+supabase.local-start:
 	@echo "Starting local Supabase..."
 	$(SUPABASE_CMD) start
 
 # Stop local Supabase
-sb.local-stop:
+supabase.local-stop:
 	@echo "Stopping local Supabase..."
 	$(SUPABASE_CMD) stop
 
 # List migrations
-sb.list-migrations:
+supabase.list-migrations:
 	@echo "Listing migrations..."
 	$(SUPABASE_CMD) migration list
 
 # Check migration status
-sb.migration-status:
+supabase.migration-status:
 	@echo "Checking migration status..."
 	$(SUPABASE_CMD) migration status
 
 # Create a new Supabase project (always interactive)
-setup.create-project:
+init.create-project:
 	@echo "Creating new Supabase project..."
 	python3 ./tools/scripts/create-project.py
 
 # Link to existing project
-setup.link:
+init.link:
 	@echo "Linking to Supabase project..."
 	python3 ./tools/scripts/link.py
 
 # Apply migrations to linked project
-sb.run-migrations:
+supabase.run-migrations:
 	@echo "Applying migrations to Supabase project..."
 	python3 ./tools/scripts/migrate.py
 
 # Link and run migrations in one step
-setup.link-and-migrate:
+init.link-and-migrate:
 	@echo "Linking to project and applying migrations..."
 	python3 ./tools/scripts/link-and-migrate.py
 
 # Complete setup (create project, link, configure, and run migrations)
-setup.all: setup.create-project setup.link-and-migrate
+init.all: init.create-project init.link-and-migrate
 	@echo "Supabase setup complete!"
 
 # Docker commands
@@ -115,23 +115,23 @@ dev.test:
 # Help command
 help:
 	@echo "Setup Commands (one-time use):"
-	@echo "  make setup.all          - Complete setup (create project, link, configure, and run migrations)"
-	@echo "  make setup.create-project - Create a new Supabase project (always interactive)"
-	@echo "  make setup.link           - Link to existing Supabase project"
-	@echo "  make setup.link-and-migrate - Link to project and run migrations in one step"
+	@echo "  make init.all          - Complete setup (create project, link, configure, and run migrations)"
+	@echo "  make init.create-project - Create a new Supabase project (always interactive)"
+	@echo "  make init.link           - Link to existing Supabase project"
+	@echo "  make init.link-and-migrate - Link to project and run migrations in one step"
 	@echo ""
-	@echo "Supabase Commands (sb. or sp.):"
-	@echo "  make sb.login          - Login to Supabase"
-	@echo "  make sb.logout         - Logout from Supabase"
+	@echo "Supabase Commands (supabase. or sp.):"
+	@echo "  make supabase.login          - Login to Supabase"
+	@echo "  make supabase.logout         - Logout from Supabase"
 	@echo "  make sp.login          - Login to Supabase (alternative)"
 	@echo "  make sp.logout         - Logout from Supabase (alternative)"
-	@echo "  make sb.sync-config    - Sync config from remote project (db pull)"
-	@echo "  make sb.list-migrations - List all migrations and their status"
-	@echo "  make sb.migration-status - Check migration status"
-	@echo "  make sb.run-migrations - Apply migrations to linked project"
-	@echo "  make sb.reset-db       - Reset database and run all migrations"
-	@echo "  make sb.local-start    - Start local Supabase"
-	@echo "  make sb.local-stop     - Stop local Supabase"
+	@echo "  make supabase.sync-config    - Sync config from remote project (db pull)"
+	@echo "  make supabase.list-migrations - List all migrations and their status"
+	@echo "  make supabase.migration-status - Check migration status"
+	@echo "  make supabase.run-migrations - Apply migrations to linked project"
+	@echo "  make supabase.reset-db       - Reset database and run all migrations"
+	@echo "  make supabase.local-start    - Start local Supabase"
+	@echo "  make supabase.local-stop     - Stop local Supabase"
 	@echo ""
 	@echo "Docker Commands (docker.):"
 	@echo "  make docker.up             - Start Docker containers"
